@@ -30,30 +30,31 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
 -- 2. Find the customer that buys the most products
     select c.FirstName, c.LastName, sum(od.Quantity)
     from customer c
-    join dblab.order o on c.CustomerID = o.CustomerID
+    join `order` o on c.CustomerID = o.CustomerID
     join orderdetail od on o.OrderID = od.OrderID
     group by c.CustomerID
     having sum(od.Quantity) >= all (
         select sum(od1.Quantity) 
         from customer c1
-        join dblab.order o1 on c1.CustomerID = o1.CustomerID
+        join `order` o1 on c1.CustomerID = o1.CustomerID
         join orderdetail od1 on o1.OrderID = od1.OrderID
         group by c1.CustomerID
         );
 
 -- 3. Find the customer that spend the most money buying products
         select c.CustomerID, c.FirstName, c.LastName, sum( p.UnitPrice * od.Quantity) as totalMoney 
-        from dblab.order o 
+        from `order` o 
         join orderdetail od on o.OrderID = od.OrderID
         join product p on p.ProductID = od.ProductID
         join customer c on c.CustomerID = o.CustomerID
         group by o.CustomerID
         having totalMoney >= all ( 
             select sum( p.UnitPrice * od.Quantity) 
-            from dblab.order o 
+            from `order` o 
             join orderdetail od on o.OrderID = od.OrderID
             join product p on p.ProductID = od.ProductID
             group by o.CustomerID  );
+            
 -- 4. Find the supplier that always supplies products with highest unit price
         select p.SupplierID, s.SupplierName
 		from product p
@@ -71,7 +72,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
     select p.CategoryID, p.ProductID, p.ProductName, count(o.CustomerID)
     from product p 
     join orderdetail od on p.ProductID = od.ProductID
-    join dblab.order o on o.OrderID = od.OrderID 
+    join `order` o on o.OrderID = od.OrderID 
     group by p.ProductID
     having count(o.CustomerID) = (
         select y.maxBuyers
@@ -80,7 +81,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
                     select p.CategoryID, p.ProductID, count(o.CustomerID) as numberOfBuyers
                     from product p 
                     join orderdetail od on p.ProductID = od.ProductID
-                    join dblab.order o on o.OrderID = od.OrderID 
+                    join `order` o on o.OrderID = od.OrderID 
                     group by p.ProductID
                 ) x
                 group by x.CategoryID ) as y
@@ -94,13 +95,13 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
         select p.CategoryID, p.ProductID, p.ProductName, count(o.CustomerID) as numberOfBuyers
         from product p 
         join orderdetail od on p.ProductID = od.ProductID
-        join dblab.order o on o.OrderID = od.OrderID 
+        join `order` o on o.OrderID = od.OrderID 
         group by p.CategoryID, p.ProductID 
         having count(o.CustomerID) >= all (
             select count(o1.CustomerID) as numberOfBuyers
             from product p1 
             join orderdetail od1 on p1.ProductID = od1.ProductID
-            join dblab.order o1 on o1.OrderID = od1.OrderID 
+            join `order` o1 on o1.OrderID = od1.OrderID 
             group by p1.CategoryID, p1.ProductID
             having p.CategoryID = p1.CategoryID
         )   
@@ -113,7 +114,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
     select y.MonthinYear, p.ProductID, p.ProductName, y.numOfCustomers 
     from(
         select date_format(o.OrderDate,"%Y-%m") as MonthinYear, od.ProductID, count(o.CustomerID) as numOfCustomers
-        from (dblab.order o)
+        from (`order` o)
         join (orderdetail od) on o.OrderID = od.OrderID
         group by date_format(o.OrderDate,"%Y-%m"), od.ProductID
     ) y
@@ -122,7 +123,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
         select x.numOfCustomers
         from (
             select date_format(o1.OrderDate,"%Y-%m") as MonthinYear, od1.ProductID, count(o1.CustomerID) as numOfCustomers
-            from (dblab.order o1)
+            from (`order` o1)
             join (orderdetail od1) on o1.OrderID = od1.OrderID
             group by date_format(o1.OrderDate,"%Y-%m"), od1.ProductID
         ) x
@@ -135,14 +136,14 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
     select x.MonthinYear, max(x.numOfCustomers) as maxNumofCustomers
     from (
         select date_format(o.OrderDate,"%Y-%m") as MonthinYear, count(o.CustomerID) as numOfCustomers
-        from dblab.order o 
+        from `order` o 
         join orderdetail od on o.OrderID = od.OrderID 
         group by date_format(o.OrderDate,"%Y-%m"), od.ProductID 
     ) x -- x: Number of customers of a product in a month
     group by x.MonthinYear ) y, -- y: highest number of customers of a product in a month
     (
         select date_format(o.OrderDate,"%Y-%m") as MonthinYear, od.ProductID ,count(o.CustomerID) as numOfCustomers
-        from dblab.order o 
+        from `order` o 
         join orderdetail od on o.OrderID = od.OrderID 
         group by date_format(o.OrderDate,"%Y-%m"), od.ProductID
     ) a
@@ -167,7 +168,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
     select y.MonthinYear, p.ProductID, p.ProductName, y.totalAmount 
     from (
         select date_format(o.OrderDate,"%Y-%m") as MonthinYear, od.ProductID, sum(od.Quantity) as totalAmount
-        from (dblab.order o)
+        from (`order` o)
         join (orderdetail od) on o.OrderID = od.OrderID
         group by date_format(o.OrderDate,"%Y-%m"), od.ProductID
     ) y
@@ -176,7 +177,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
         select x.totalAmount
         from (
             select date_format(o1.OrderDate,"%Y-%m") as MonthinYear, od1.ProductID, sum(od1.Quantity) as totalAmount
-            from (dblab.order o1)
+            from (`order` o1)
             join (orderdetail od1) on o1.OrderID = od1.OrderID
             group by date_format(o1.OrderDate,"%Y-%m"), od1.ProductID
         ) x
@@ -265,7 +266,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
             select p.SupplierID, date_format(o.OrderDate,"%Y-%m") as month, sum( p.UnitPrice * od.Quantity ) as totalSale  
             from product p 
             join orderdetail od on od.ProductID = p.ProductID
-            join dblab.order o on o.OrderID = od.OrderID
+            join `order` o on o.OrderID = od.OrderID
             group by month
         ) as re 
         group by re.month, re.SupplierID
@@ -281,7 +282,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
                 select p.SupplierID, date_format(o.OrderDate,"%Y-%m") as month, sum( p.UnitPrice * od.Quantity ) as totalSale  
                 from product p 
                 join orderdetail od on od.ProductID = p.ProductID
-                join dblab.order o on o.OrderID = od.OrderID
+                join `order` o on o.OrderID = od.OrderID
                 group by month
             ) as re 
             group by re.month, re.SupplierID
@@ -290,14 +291,14 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
     );
 
 -- 16. Find month in which customers tend to spend most money.
-    select date_format(o.OrderDate, "%m") as month, sum(od.Quantity * p.UnitPrice) / (select count(distinct year(OrderDate)) from dblab.order) as average_sales_per_month
-    from dblab.order o 
+    select date_format(o.OrderDate, "%m") as month, sum(od.Quantity * p.UnitPrice) / (select count(distinct year(OrderDate)) from `order`) as average_sales_per_month
+    from `order` o 
     join orderdetail od on o.OrderID = od.OrderID
     join product p on p.ProductID = od.ProductID
     group by date_format(o.OrderDate,"%m")
     having average_sales_per_month >= all (
-        select sum(od1.Quantity * p1.UnitPrice) / (select count(distinct year(OrderDate)) from dblab.order) as average_quanity_per_month
-        from dblab.order o1 
+        select sum(od1.Quantity * p1.UnitPrice) / (select count(distinct year(OrderDate)) from `order`) as average_quanity_per_month
+        from `order` o1 
         join orderdetail od1 on o1.OrderID = od1.OrderID
         join product p1 on p1.ProductID = od1.ProductID
         group by date_format(o1.OrderDate,"%m")
@@ -343,14 +344,14 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
 -- 20. Find the product that has greatest number of items sold in 2016
     select od.ProductID, p.ProductName, sum(od.Quantity)
     from orderdetail od 
-    join dblab.order o on od.OrderID = o.OrderID
+    join `order` o on od.OrderID = o.OrderID
     join product p on od.ProductID = p.ProductID
     where year(o.OrderDate) = 2016
     group by od.ProductID
     having sum(od.Quantity) >= all (
         select sum(od.Quantity)
         from orderdetail od 
-        join dblab.order o on od.OrderID = o.OrderID
+        join `order` o on od.OrderID = o.OrderID
         where year(o.OrderDate) = 2016
         group by od.ProductID
     );
