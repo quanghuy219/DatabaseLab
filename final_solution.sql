@@ -9,6 +9,12 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
 
 -- 1. Find the total sales in every 6 months of all supplier
 
+
+    /*
+        NOTE:
+        To execute the query, disable sql_mode ONLY_FULL_GROUP_BY which is made default in mysql version 5.7
+    */
+
     select DATE_FORMAT(DATE_ADD(cal.calDate, INTERVAL -5 MONTH), "%Y-%m") as orderDateStart, DATE_FORMAT(cal.calDate,"%Y-%m") as orderDateEnd, sum(p.UnitPrice * od.Quantity) as sumOfSale
     from product as p, orderdetail as od, (
         SELECT OrderID,
@@ -25,6 +31,26 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
     where cal.OrderID = od.OrderID
     and od.ProductID = p.ProductID
     group by orderDateEnd;
+
+    /*
+        With sql_mode ONLY_FULL_GROUP_BY
+    */
+    select DATE_FORMAT(DATE_ADD(cal.calDate, INTERVAL -5 MONTH), "%Y-%m") as orderDateStart, DATE_FORMAT(cal.calDate,"%Y-%m") as orderDateEnd, sum(p.UnitPrice * od.Quantity) as sumOfSale
+    from product as p, orderdetail as od, (
+        SELECT OrderID,
+        CASE
+            WHEN month(OrderDate) = 1 or month(OrderDate) = 7 THEN DATE_ADD(OrderDate, INTERVAL 5 MONTH)
+            WHEN month(OrderDate) = 2 or month(OrderDate) = 8 THEN DATE_ADD(OrderDate, INTERVAL 4 MONTH)
+            WHEN month(OrderDate) = 3 or month(OrderDate) = 9 THEN DATE_ADD(OrderDate, INTERVAL 3 MONTH)
+            WHEN month(OrderDate) = 4 or month(OrderDate) = 10 THEN DATE_ADD(OrderDate, INTERVAL 2 MONTH)
+            WHEN month(OrderDate) = 5 or month(OrderDate) = 11 THEN DATE_ADD(OrderDate, INTERVAL 1 MONTH)
+            ELSE OrderDate
+        END as calDate
+        FROM `order`
+    ) as cal
+    where cal.OrderID = od.OrderID
+    and od.ProductID = p.ProductID
+    group by orderDateEnd, orderDateStart;
 
 
 -- 2. Find the customer that buys the most products
@@ -54,7 +80,7 @@ supplier(SupplierID, SupplierName, Address, City, Phone)
             join orderdetail od on o.OrderID = od.OrderID
             join product p on p.ProductID = od.ProductID
             group by o.CustomerID  );
-            
+
 -- 4. Find the supplier that always supplies products with highest unit price
         select p.SupplierID, s.SupplierName
 		from product p
